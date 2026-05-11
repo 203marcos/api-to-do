@@ -1,7 +1,9 @@
 package com.marcosdias.apitodo.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.marcosdias.apitodo.business.service.JwtService;
 import com.marcosdias.apitodo.business.service.TarefaService;
+import com.marcosdias.apitodo.infra.security.UserDetailsServiceImpl;
 import com.marcosdias.apitodo.controller.dto.TarefaRequest;
 import com.marcosdias.apitodo.controller.dto.TarefaResponse;
 import com.marcosdias.apitodo.controller.dto.TarefaUpdateRequest;
@@ -16,6 +18,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
@@ -29,6 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(TarefaController.class)
 @Import(GlobalExceptionHandler.class)
+@WithMockUser
 class TarefaControllerTest {
 
     @Autowired
@@ -39,6 +43,12 @@ class TarefaControllerTest {
 
     @MockBean
     private TarefaService tarefaService;
+
+    @MockBean
+    private JwtService jwtService;
+
+    @MockBean
+    private UserDetailsServiceImpl userDetailsServiceImpl;
 
     private TarefaResponse tarefaResponse;
     private TarefaRequest request;
