@@ -125,9 +125,9 @@ class TarefaControllerTest {
     // ==================== GET all ====================
 
     @Test
-    @DisplayName("GET /tarefas - deve retornar 200 e lista de tarefas")
+    @DisplayName("GET /tarefas - deve retornar 200 e lista de tarefas sem filtro")
     void listarTarefas_sucesso() throws Exception {
-        when(tarefaService.listarTarefas()).thenReturn(List.of(tarefaResponse));
+        when(tarefaService.listarTarefas(null)).thenReturn(List.of(tarefaResponse));
 
         mockMvc.perform(get(BASE_URL))
                 .andExpect(status().isOk())
@@ -137,9 +137,19 @@ class TarefaControllerTest {
     }
 
     @Test
+    @DisplayName("GET /tarefas?status=false - deve retornar apenas tarefas pendentes")
+    void listarTarefas_filtroStatusFalse_retornaPendentes() throws Exception {
+        when(tarefaService.listarTarefas(false)).thenReturn(List.of(tarefaResponse));
+
+        mockMvc.perform(get(BASE_URL).param("status", "false"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].statusTarefa").value(false));
+    }
+
+    @Test
     @DisplayName("GET /tarefas - deve retornar 200 e lista vazia quando não houver tarefas")
     void listarTarefas_vazio_retorna200ComListaVazia() throws Exception {
-        when(tarefaService.listarTarefas()).thenReturn(List.of());
+        when(tarefaService.listarTarefas(null)).thenReturn(List.of());
 
         mockMvc.perform(get(BASE_URL))
                 .andExpect(status().isOk())

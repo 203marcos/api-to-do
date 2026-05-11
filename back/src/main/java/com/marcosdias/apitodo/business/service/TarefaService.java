@@ -28,10 +28,11 @@ public class TarefaService {
         return tarefaMapper.toResponse(tarefaRepository.save(tarefa));
     }
 
-    public List<TarefaResponse> listarTarefas() {
-        return tarefaRepository.findAll().stream()
-                .map(tarefaMapper::toResponse)
-                .toList();
+    public List<TarefaResponse> listarTarefas(Boolean status) {
+        List<Tarefa> tarefas = status != null
+                ? tarefaRepository.findByStatusTarefa(status)
+                : tarefaRepository.findAll();
+        return tarefas.stream().map(tarefaMapper::toResponse).toList();
     }
 
     public TarefaResponse buscarTarefaId(String id) {

@@ -3,9 +3,10 @@ import { Tarefa, TarefaRequest } from '@/types';
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
 const URL = `${BASE}/api/v1/tarefas`;
 
-export async function listarTarefas(): Promise<Tarefa[]> {
+export async function listarTarefas(status?: boolean): Promise<Tarefa[]> {
   try {
-    const res = await fetch(URL, { cache: 'no-store' });
+    const query = status !== undefined ? `?status=${status}` : '';
+    const res = await fetch(`${URL}${query}`, { cache: 'no-store' });
     if (!res.ok) return [];
     return res.json();
   } catch {

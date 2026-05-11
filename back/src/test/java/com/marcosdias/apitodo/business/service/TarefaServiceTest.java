@@ -88,14 +88,29 @@ class TarefaServiceTest {
     // ==================== listarTarefas ====================
 
     @Test
-    @DisplayName("listarTarefas - deve retornar lista com tarefas")
-    void listarTarefas_sucesso() {
+    @DisplayName("listarTarefas - deve retornar todas as tarefas quando status for null")
+    void listarTarefas_semFiltro_retornaTodasTarefas() {
         when(tarefaRepository.findAll()).thenReturn(List.of(tarefa));
         when(tarefaMapper.toResponse(tarefa)).thenReturn(tarefaResponse);
 
-        List<TarefaResponse> resultado = tarefaService.listarTarefas();
+        List<TarefaResponse> resultado = tarefaService.listarTarefas(null);
 
         assertThat(resultado).hasSize(1).contains(tarefaResponse);
+        verify(tarefaRepository).findAll();
+        verify(tarefaRepository, never()).findByStatusTarefa(any());
+    }
+
+    @Test
+    @DisplayName("listarTarefas - deve filtrar por status quando informado")
+    void listarTarefas_comFiltroStatus_retornaFiltradas() {
+        when(tarefaRepository.findByStatusTarefa(false)).thenReturn(List.of(tarefa));
+        when(tarefaMapper.toResponse(tarefa)).thenReturn(tarefaResponse);
+
+        List<TarefaResponse> resultado = tarefaService.listarTarefas(false);
+
+        assertThat(resultado).hasSize(1).contains(tarefaResponse);
+        verify(tarefaRepository).findByStatusTarefa(false);
+        verify(tarefaRepository, never()).findAll();
     }
 
     @Test
@@ -103,7 +118,7 @@ class TarefaServiceTest {
     void listarTarefas_listaVazia_retornaListaVazia() {
         when(tarefaRepository.findAll()).thenReturn(List.of());
 
-        List<TarefaResponse> resultado = tarefaService.listarTarefas();
+        List<TarefaResponse> resultado = tarefaService.listarTarefas(null);
 
         assertThat(resultado).isEmpty();
     }

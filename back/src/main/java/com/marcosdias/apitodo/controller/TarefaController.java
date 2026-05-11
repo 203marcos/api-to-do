@@ -32,10 +32,11 @@ public class TarefaController {
     }
 
     @GetMapping
-    @Operation(summary = "Listar todas as tarefas", description = "Retorna todas as tarefas cadastradas")
-    public ResponseEntity<List<TarefaResponse>> listarTarefas() {
-        log.info("GET /api/v1/tarefas - listando tarefas");
-        return ResponseEntity.ok(tarefaService.listarTarefas());
+    @Operation(summary = "Listar tarefas", description = "Retorna todas as tarefas. Use ?status=true para concluídas ou ?status=false para pendentes")
+    public ResponseEntity<List<TarefaResponse>> listarTarefas(
+            @RequestParam(required = false) Boolean status) {
+        log.info("GET /api/v1/tarefas - listando tarefas (status={})", status);
+        return ResponseEntity.ok(tarefaService.listarTarefas(status));
     }
 
     @GetMapping("/{id}")

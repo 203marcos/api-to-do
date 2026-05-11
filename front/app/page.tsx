@@ -10,6 +10,7 @@ export default function Home() {
   const [tarefas, setTarefas] = useState<Tarefa[]>([]);
   const [form, setForm] = useState<TarefaRequest>(emptyForm);
   const [editando, setEditando] = useState<Tarefa | null>(null);
+  const [filtro, setFiltro] = useState<boolean | undefined>(undefined);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [erro, setErro] = useState('');
@@ -17,10 +18,10 @@ export default function Home() {
 
   const carregar = useCallback(async () => {
     setLoading(true);
-    const data = await listarTarefas();
+    const data = await listarTarefas(filtro);
     setTarefas(data);
     setLoading(false);
-  }, []);
+  }, [filtro]);
 
   useEffect(() => { carregar(); }, [carregar]);
 
@@ -94,6 +95,25 @@ export default function Home() {
           <p className="text-gray-500 text-sm mt-1">
             {pendentes.length} pendente{pendentes.length !== 1 ? 's' : ''} · {concluidas.length} concluída{concluidas.length !== 1 ? 's' : ''}
           </p>
+          <div className="flex gap-2 mt-4">
+            {[
+              { label: 'Todas', value: undefined },
+              { label: 'Pendentes', value: false },
+              { label: 'Concluídas', value: true },
+            ].map(op => (
+              <button
+                key={String(op.value)}
+                onClick={() => setFiltro(op.value)}
+                className={`px-3 py-1 rounded-full text-sm font-medium transition ${
+                  filtro === op.value
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-gray-900 text-gray-400 hover:text-white border border-gray-800'
+                }`}
+              >
+                {op.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Form criar */}
