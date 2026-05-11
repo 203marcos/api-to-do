@@ -10,6 +10,7 @@ import com.marcosdias.apitodo.infra.exception.UnprocessableEntityException;
 import com.marcosdias.apitodo.repository.TarefaRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,39 +24,49 @@ public class TarefaService {
     private final TarefaMapper tarefaMapper;
 
     public TarefaResponse adicionarTarefa(TarefaRequest request) {
-        log.info("Salvando tarefa: {}", request.nomeTarefa());
+        String email = getCurrentUserEmail();
+        log.info("Salvando tarefa para: {}", email);
         Tarefa tarefa = tarefaMapper.toEntity(request);
+        tarefa.setUsuarioEmail(email);
         return tarefaMapper.toResponse(tarefaRepository.save(tarefa));
     }
 
     public List<TarefaResponse> listarTarefas(Boolean status) {
+        String email = getCurrentUserEmail();
         List<Tarefa> tarefas = status != null
-                ? tarefaRepository.findByStatusTarefa(status)
-                : tarefaRepository.findAll();
+                ? tarefaRepository.findByStatusTarefaAndUsuarioEmail(status, email)
+                : tarefaRepository.findByUsuarioEmail(email);
         return tarefas.stream().map(tarefaMapper::toResponse).toList();
     }
 
     public TarefaResponse buscarTarefaId(String id) {
-        Tarefa tarefa = tarefaRepository.findById(id)
+        String email = getCurrentUserEmail();
+        Tarefa tarefa = tarefaRepository.findByIdAndUsuarioEmail(id, email)
                 .orElseThrow(() -> new NotFoundException("Tarefa não encontrada com id: " + id));
         return tarefaMapper.toResponse(tarefa);
     }
 
     public void deletarTarefa(String id) {
-        Tarefa tarefa = tarefaRepository.findById(id)
+        String email = getCurrentUserEmail();
+        Tarefa tarefa = tarefaRepository.findByIdAndUsuarioEmail(id, email)
                 .orElseThrow(() -> new NotFoundException("Tarefa não encontrada com id: " + id));
         tarefaRepository.delete(tarefa);
-        log.info("Tarefa id {} deletada", id);
+        log.info("Tarefa id {} deletada por {}", id, email);
     }
 
     public TarefaResponse alterarTarefa(String id, TarefaUpdateRequest request) {
         if (request.isEmpty()) {
             throw new UnprocessableEntityException("Nenhum campo fornecido para atualização");
         }
-        Tarefa tarefa = tarefaRepository.findById(id)
+        String email = getCurrentUserEmail();
+        Tarefa tarefa = tarefaRepository.findByIdAndUsuarioEmail(id, email)
                 .orElseThrow(() -> new NotFoundException("Tarefa não encontrada com id: " + id));
         tarefaMapper.updateFromRequest(request, tarefa);
-        log.info("Atualizando tarefa id: {}", id);
+        log.info("Atualizando tarefa id: {} por {}", id, email);
         return tarefaMapper.toResponse(tarefaRepository.save(tarefa));
+    }
+
+    private String getCurrentUserEmail() {
+        return SecurityContextHolder.getContext().getAuthentication().getName();
     }
 }

@@ -12,6 +12,7 @@ public class Tarefa {
 
     @Id
     private String id;
+    private String usuarioEmail;
     private String nomeTarefa;
     private String descricaoTarefa;
     private LocalDate dataInicioTarefa;

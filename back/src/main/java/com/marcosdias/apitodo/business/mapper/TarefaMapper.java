@@ -9,6 +9,7 @@ import org.mapstruct.*;
 @Mapper(componentModel = "spring")
 public interface TarefaMapper {
 
+    @Mapping(target = "usuarioEmail", ignore = true)
     Tarefa toEntity(TarefaRequest request);
 
     TarefaResponse toResponse(Tarefa tarefa);

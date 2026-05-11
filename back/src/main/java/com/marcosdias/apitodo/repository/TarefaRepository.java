@@ -5,9 +5,14 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface TarefaRepository extends MongoRepository<Tarefa, String> {
 
-    List<Tarefa> findByStatusTarefa(Boolean statusTarefa);
+    List<Tarefa> findByUsuarioEmail(String usuarioEmail);
+
+    List<Tarefa> findByStatusTarefaAndUsuarioEmail(Boolean statusTarefa, String usuarioEmail);
+
+    Optional<Tarefa> findByIdAndUsuarioEmail(String id, String usuarioEmail);
 }

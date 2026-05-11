@@ -8,6 +8,7 @@ import com.marcosdias.apitodo.domain.entity.Tarefa;
 import com.marcosdias.apitodo.infra.exception.NotFoundException;
 import com.marcosdias.apitodo.infra.exception.UnprocessableEntityException;
 import com.marcosdias.apitodo.repository.TarefaRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,6 +16,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -40,10 +45,19 @@ class TarefaServiceTest {
     private TarefaResponse tarefaResponse;
     private TarefaRequest tarefaRequest;
 
+    private static final String USER_EMAIL = "user@test.com";
+
     @BeforeEach
     void setUp() {
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn(USER_EMAIL);
+        SecurityContext securityContext = mock(SecurityContext.class);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        SecurityContextHolder.setContext(securityContext);
+
         tarefa = new Tarefa();
         tarefa.setId("683f1a2b4c5d6e7f8a9b0c1d");
+        tarefa.setUsuarioEmail(USER_EMAIL);
         tarefa.setNomeTarefa("Estudar Spring Boot");
         tarefa.setDescricaoTarefa("Aprender APIs REST");
         tarefa.setDataInicioTarefa(LocalDate.of(2026, 5, 11));
@@ -68,6 +82,11 @@ class TarefaServiceTest {
         );
     }
 
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
+
     // ==================== adicionarTarefa ====================
 
     @Test
@@ -88,35 +107,35 @@ class TarefaServiceTest {
     // ==================== listarTarefas ====================
 
     @Test
-    @DisplayName("listarTarefas - deve retornar todas as tarefas quando status for null")
+    @DisplayName("listarTarefas - deve retornar tarefas do usuário quando status for null")
     void listarTarefas_semFiltro_retornaTodasTarefas() {
-        when(tarefaRepository.findAll()).thenReturn(List.of(tarefa));
+        when(tarefaRepository.findByUsuarioEmail(USER_EMAIL)).thenReturn(List.of(tarefa));
         when(tarefaMapper.toResponse(tarefa)).thenReturn(tarefaResponse);
 
         List<TarefaResponse> resultado = tarefaService.listarTarefas(null);
 
         assertThat(resultado).hasSize(1).contains(tarefaResponse);
-        verify(tarefaRepository).findAll();
-        verify(tarefaRepository, never()).findByStatusTarefa(any());
+        verify(tarefaRepository).findByUsuarioEmail(USER_EMAIL);
+        verify(tarefaRepository, never()).findByStatusTarefaAndUsuarioEmail(any(), any());
     }
 
     @Test
-    @DisplayName("listarTarefas - deve filtrar por status quando informado")
+    @DisplayName("listarTarefas - deve filtrar por status do usuário quando informado")
     void listarTarefas_comFiltroStatus_retornaFiltradas() {
-        when(tarefaRepository.findByStatusTarefa(false)).thenReturn(List.of(tarefa));
+        when(tarefaRepository.findByStatusTarefaAndUsuarioEmail(false, USER_EMAIL)).thenReturn(List.of(tarefa));
         when(tarefaMapper.toResponse(tarefa)).thenReturn(tarefaResponse);
 
         List<TarefaResponse> resultado = tarefaService.listarTarefas(false);
 
         assertThat(resultado).hasSize(1).contains(tarefaResponse);
-        verify(tarefaRepository).findByStatusTarefa(false);
-        verify(tarefaRepository, never()).findAll();
+        verify(tarefaRepository).findByStatusTarefaAndUsuarioEmail(false, USER_EMAIL);
+        verify(tarefaRepository, never()).findByUsuarioEmail(any());
     }
 
     @Test
     @DisplayName("listarTarefas - deve retornar lista vazia quando não houver tarefas")
     void listarTarefas_listaVazia_retornaListaVazia() {
-        when(tarefaRepository.findAll()).thenReturn(List.of());
+        when(tarefaRepository.findByUsuarioEmail(USER_EMAIL)).thenReturn(List.of());
 
         List<TarefaResponse> resultado = tarefaService.listarTarefas(null);
 
@@ -128,7 +147,7 @@ class TarefaServiceTest {
     @Test
     @DisplayName("buscarTarefaId - deve retornar resposta quando ID existir")
     void buscarTarefaId_sucesso() {
-        when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+        when(tarefaRepository.findByIdAndUsuarioEmail(tarefa.getId(), USER_EMAIL)).thenReturn(Optional.of(tarefa));
         when(tarefaMapper.toResponse(tarefa)).thenReturn(tarefaResponse);
 
         TarefaResponse resultado = tarefaService.buscarTarefaId(tarefa.getId());
@@ -139,7 +158,7 @@ class TarefaServiceTest {
     @Test
     @DisplayName("buscarTarefaId - deve lançar NotFoundException quando ID não existir")
     void buscarTarefaId_naoEncontrado_lancaNotFoundException() {
-        when(tarefaRepository.findById("id-invalido")).thenReturn(Optional.empty());
+        when(tarefaRepository.findByIdAndUsuarioEmail("id-invalido", USER_EMAIL)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> tarefaService.buscarTarefaId("id-invalido"))
                 .isInstanceOf(NotFoundException.class)
@@ -151,7 +170,7 @@ class TarefaServiceTest {
     @Test
     @DisplayName("deletarTarefa - deve deletar tarefa quando ID existir")
     void deletarTarefa_sucesso() {
-        when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+        when(tarefaRepository.findByIdAndUsuarioEmail(tarefa.getId(), USER_EMAIL)).thenReturn(Optional.of(tarefa));
 
         tarefaService.deletarTarefa(tarefa.getId());
 
@@ -161,7 +180,7 @@ class TarefaServiceTest {
     @Test
     @DisplayName("deletarTarefa - deve lançar NotFoundException quando ID não existir")
     void deletarTarefa_naoEncontrado_lancaNotFoundException() {
-        when(tarefaRepository.findById("id-invalido")).thenReturn(Optional.empty());
+        when(tarefaRepository.findByIdAndUsuarioEmail("id-invalido", USER_EMAIL)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> tarefaService.deletarTarefa("id-invalido"))
                 .isInstanceOf(NotFoundException.class);
@@ -175,7 +194,7 @@ class TarefaServiceTest {
     @DisplayName("alterarTarefa - deve atualizar e retornar resposta")
     void alterarTarefa_sucesso() {
         TarefaUpdateRequest request = new TarefaUpdateRequest("Novo Nome", null, null, null, true);
-        when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+        when(tarefaRepository.findByIdAndUsuarioEmail(tarefa.getId(), USER_EMAIL)).thenReturn(Optional.of(tarefa));
         when(tarefaRepository.save(tarefa)).thenReturn(tarefa);
         when(tarefaMapper.toResponse(tarefa)).thenReturn(tarefaResponse);
 
@@ -202,7 +221,7 @@ class TarefaServiceTest {
     @DisplayName("alterarTarefa - deve lançar NotFoundException quando ID não existir")
     void alterarTarefa_naoEncontrado_lancaNotFoundException() {
         TarefaUpdateRequest request = new TarefaUpdateRequest("Novo Nome", null, null, null, null);
-        when(tarefaRepository.findById("id-invalido")).thenReturn(Optional.empty());
+        when(tarefaRepository.findByIdAndUsuarioEmail("id-invalido", USER_EMAIL)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> tarefaService.alterarTarefa("id-invalido", request))
                 .isInstanceOf(NotFoundException.class);
