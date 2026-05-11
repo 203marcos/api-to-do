@@ -3,8 +3,8 @@ package com.marcosdias.apitodo.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.marcosdias.apitodo.business.service.TarefaService;
 import com.marcosdias.apitodo.controller.dto.TarefaRequest;
+import com.marcosdias.apitodo.controller.dto.TarefaResponse;
 import com.marcosdias.apitodo.controller.dto.TarefaUpdateRequest;
-import com.marcosdias.apitodo.domain.entity.Tarefa;
 import com.marcosdias.apitodo.infra.exception.GlobalExceptionHandler;
 import com.marcosdias.apitodo.infra.exception.NotFoundException;
 import com.marcosdias.apitodo.infra.exception.UnprocessableEntityException;
@@ -18,6 +18,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -39,26 +40,27 @@ class TarefaControllerTest {
     @MockBean
     private TarefaService tarefaService;
 
-    private Tarefa tarefa;
+    private TarefaResponse tarefaResponse;
     private TarefaRequest request;
     private static final String BASE_URL = "/api/v1/tarefas";
     private static final String ID = "683f1a2b4c5d6e7f8a9b0c1d";
 
     @BeforeEach
     void setUp() {
-        tarefa = new Tarefa();
-        tarefa.setId(ID);
-        tarefa.setNomeTarefa("Estudar Spring Boot");
-        tarefa.setDescricaoTarefa("Aprender APIs REST");
-        tarefa.setDataInicioTarefa("2026-05-11");
-        tarefa.setDataFimTarefa("2026-05-31");
-        tarefa.setStatusTarefa(false);
+        tarefaResponse = new TarefaResponse(
+                ID,
+                "Estudar Spring Boot",
+                "Aprender APIs REST",
+                LocalDate.of(2026, 5, 11),
+                LocalDate.of(2026, 5, 31),
+                false
+        );
 
         request = new TarefaRequest(
                 "Estudar Spring Boot",
                 "Aprender APIs REST",
-                "2026-05-11",
-                "2026-05-31",
+                LocalDate.of(2026, 5, 11),
+                LocalDate.of(2026, 5, 31),
                 false
         );
     }
@@ -68,7 +70,7 @@ class TarefaControllerTest {
     @Test
     @DisplayName("POST /tarefas - deve retornar 201 e a tarefa criada")
     void criarTarefa_sucesso() throws Exception {
-        when(tarefaService.adicionarTarefa(any())).thenReturn(tarefa);
+        when(tarefaService.adicionarTarefa(any())).thenReturn(tarefaResponse);
 
         mockMvc.perform(post(BASE_URL)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -82,7 +84,7 @@ class TarefaControllerTest {
     @Test
     @DisplayName("POST /tarefas - deve retornar 400 quando nomeTarefa estiver vazio")
     void criarTarefa_semNome_retorna400() throws Exception {
-        TarefaRequest requestInvalido = new TarefaRequest("", "desc", "2026-05-11", "2026-05-31", false);
+        TarefaRequest requestInvalido = new TarefaRequest("", "desc", null, null, false);
 
         mockMvc.perform(post(BASE_URL)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -94,7 +96,7 @@ class TarefaControllerTest {
     @Test
     @DisplayName("POST /tarefas - deve retornar 400 quando statusTarefa estiver ausente")
     void criarTarefa_semStatus_retorna400() throws Exception {
-        TarefaRequest requestInvalido = new TarefaRequest("Tarefa", "desc", "2026-05-11", "2026-05-31", null);
+        TarefaRequest requestInvalido = new TarefaRequest("Tarefa", "desc", null, null, null);
 
         mockMvc.perform(post(BASE_URL)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -105,11 +107,18 @@ class TarefaControllerTest {
     @Test
     @DisplayName("POST /tarefas - deve retornar 400 quando data estiver em formato inválido")
     void criarTarefa_dataInvalida_retorna400() throws Exception {
-        TarefaRequest requestInvalido = new TarefaRequest("Tarefa", "desc", "11/05/2026", "31/05/2026", false);
+        String jsonInvalido = """
+                {
+                    "nomeTarefa": "Tarefa",
+                    "descricaoTarefa": "desc",
+                    "dataInicioTarefa": "11/05/2026",
+                    "statusTarefa": false
+                }
+                """;
 
         mockMvc.perform(post(BASE_URL)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(requestInvalido)))
+                        .content(jsonInvalido))
                 .andExpect(status().isBadRequest());
     }
 
@@ -118,7 +127,7 @@ class TarefaControllerTest {
     @Test
     @DisplayName("GET /tarefas - deve retornar 200 e lista de tarefas")
     void listarTarefas_sucesso() throws Exception {
-        when(tarefaService.listarTarefas()).thenReturn(List.of(tarefa));
+        when(tarefaService.listarTarefas()).thenReturn(List.of(tarefaResponse));
 
         mockMvc.perform(get(BASE_URL))
                 .andExpect(status().isOk())
@@ -128,14 +137,14 @@ class TarefaControllerTest {
     }
 
     @Test
-    @DisplayName("GET /tarefas - deve retornar 404 quando não houver tarefas")
-    void listarTarefas_vazio_retorna404() throws Exception {
-        when(tarefaService.listarTarefas()).thenThrow(new NotFoundException("Nenhuma tarefa encontrada"));
+    @DisplayName("GET /tarefas - deve retornar 200 e lista vazia quando não houver tarefas")
+    void listarTarefas_vazio_retorna200ComListaVazia() throws Exception {
+        when(tarefaService.listarTarefas()).thenReturn(List.of());
 
         mockMvc.perform(get(BASE_URL))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.status").value(404))
-                .andExpect(jsonPath("$.message").value("Nenhuma tarefa encontrada"));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$").isEmpty());
     }
 
     // ==================== GET by ID ====================
@@ -143,7 +152,7 @@ class TarefaControllerTest {
     @Test
     @DisplayName("GET /tarefas/{id} - deve retornar 200 e a tarefa")
     void buscarTarefaId_sucesso() throws Exception {
-        when(tarefaService.buscarTarefaId(ID)).thenReturn(tarefa);
+        when(tarefaService.buscarTarefaId(ID)).thenReturn(tarefaResponse);
 
         mockMvc.perform(get(BASE_URL + "/" + ID))
                 .andExpect(status().isOk())
@@ -168,9 +177,9 @@ class TarefaControllerTest {
     @DisplayName("PATCH /tarefas/{id} - deve retornar 200 e tarefa atualizada")
     void alterarTarefaId_sucesso() throws Exception {
         TarefaUpdateRequest updateRequest = new TarefaUpdateRequest("Novo Nome", null, null, null, true);
-        tarefa.setNomeTarefa("Novo Nome");
-        tarefa.setStatusTarefa(true);
-        when(tarefaService.alterarTarefa(eq(ID), any())).thenReturn(tarefa);
+        TarefaResponse atualizada = new TarefaResponse(ID, "Novo Nome", "Aprender APIs REST",
+                LocalDate.of(2026, 5, 11), LocalDate.of(2026, 5, 31), true);
+        when(tarefaService.alterarTarefa(eq(ID), any())).thenReturn(atualizada);
 
         mockMvc.perform(patch(BASE_URL + "/" + ID)
                         .contentType(MediaType.APPLICATION_JSON)

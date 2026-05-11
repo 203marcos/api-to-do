@@ -1,6 +1,8 @@
 package com.marcosdias.apitodo.business.service;
 
 import com.marcosdias.apitodo.business.mapper.TarefaMapper;
+import com.marcosdias.apitodo.controller.dto.TarefaRequest;
+import com.marcosdias.apitodo.controller.dto.TarefaResponse;
 import com.marcosdias.apitodo.controller.dto.TarefaUpdateRequest;
 import com.marcosdias.apitodo.domain.entity.Tarefa;
 import com.marcosdias.apitodo.infra.exception.NotFoundException;
@@ -14,6 +16,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,6 +37,8 @@ class TarefaServiceTest {
     private TarefaService tarefaService;
 
     private Tarefa tarefa;
+    private TarefaResponse tarefaResponse;
+    private TarefaRequest tarefaRequest;
 
     @BeforeEach
     void setUp() {
@@ -41,56 +46,79 @@ class TarefaServiceTest {
         tarefa.setId("683f1a2b4c5d6e7f8a9b0c1d");
         tarefa.setNomeTarefa("Estudar Spring Boot");
         tarefa.setDescricaoTarefa("Aprender APIs REST");
-        tarefa.setDataInicioTarefa("2026-05-11");
-        tarefa.setDataFimTarefa("2026-05-31");
+        tarefa.setDataInicioTarefa(LocalDate.of(2026, 5, 11));
+        tarefa.setDataFimTarefa(LocalDate.of(2026, 5, 31));
         tarefa.setStatusTarefa(false);
+
+        tarefaResponse = new TarefaResponse(
+                "683f1a2b4c5d6e7f8a9b0c1d",
+                "Estudar Spring Boot",
+                "Aprender APIs REST",
+                LocalDate.of(2026, 5, 11),
+                LocalDate.of(2026, 5, 31),
+                false
+        );
+
+        tarefaRequest = new TarefaRequest(
+                "Estudar Spring Boot",
+                "Aprender APIs REST",
+                LocalDate.of(2026, 5, 11),
+                LocalDate.of(2026, 5, 31),
+                false
+        );
     }
 
     // ==================== adicionarTarefa ====================
 
     @Test
-    @DisplayName("adicionarTarefa - deve salvar e retornar a tarefa")
+    @DisplayName("adicionarTarefa - deve salvar e retornar a resposta")
     void adicionarTarefa_sucesso() {
+        when(tarefaMapper.toEntity(tarefaRequest)).thenReturn(tarefa);
         when(tarefaRepository.save(tarefa)).thenReturn(tarefa);
+        when(tarefaMapper.toResponse(tarefa)).thenReturn(tarefaResponse);
 
-        Tarefa resultado = tarefaService.adicionarTarefa(tarefa);
+        TarefaResponse resultado = tarefaService.adicionarTarefa(tarefaRequest);
 
-        assertThat(resultado).isEqualTo(tarefa);
+        assertThat(resultado).isEqualTo(tarefaResponse);
+        verify(tarefaMapper).toEntity(tarefaRequest);
         verify(tarefaRepository).save(tarefa);
+        verify(tarefaMapper).toResponse(tarefa);
     }
 
     // ==================== listarTarefas ====================
 
     @Test
-    @DisplayName("listarTarefas - deve retornar lista quando existirem tarefas")
+    @DisplayName("listarTarefas - deve retornar lista com tarefas")
     void listarTarefas_sucesso() {
         when(tarefaRepository.findAll()).thenReturn(List.of(tarefa));
+        when(tarefaMapper.toResponse(tarefa)).thenReturn(tarefaResponse);
 
-        List<Tarefa> resultado = tarefaService.listarTarefas();
+        List<TarefaResponse> resultado = tarefaService.listarTarefas();
 
-        assertThat(resultado).hasSize(1).contains(tarefa);
+        assertThat(resultado).hasSize(1).contains(tarefaResponse);
     }
 
     @Test
-    @DisplayName("listarTarefas - deve lançar NotFoundException quando lista estiver vazia")
-    void listarTarefas_listaVazia_lancaNotFoundException() {
+    @DisplayName("listarTarefas - deve retornar lista vazia quando não houver tarefas")
+    void listarTarefas_listaVazia_retornaListaVazia() {
         when(tarefaRepository.findAll()).thenReturn(List.of());
 
-        assertThatThrownBy(() -> tarefaService.listarTarefas())
-                .isInstanceOf(NotFoundException.class)
-                .hasMessage("Nenhuma tarefa encontrada");
+        List<TarefaResponse> resultado = tarefaService.listarTarefas();
+
+        assertThat(resultado).isEmpty();
     }
 
     // ==================== buscarTarefaId ====================
 
     @Test
-    @DisplayName("buscarTarefaId - deve retornar tarefa quando ID existir")
+    @DisplayName("buscarTarefaId - deve retornar resposta quando ID existir")
     void buscarTarefaId_sucesso() {
         when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
+        when(tarefaMapper.toResponse(tarefa)).thenReturn(tarefaResponse);
 
-        Tarefa resultado = tarefaService.buscarTarefaId(tarefa.getId());
+        TarefaResponse resultado = tarefaService.buscarTarefaId(tarefa.getId());
 
-        assertThat(resultado).isEqualTo(tarefa);
+        assertThat(resultado).isEqualTo(tarefaResponse);
     }
 
     @Test
@@ -129,15 +157,16 @@ class TarefaServiceTest {
     // ==================== alterarTarefa ====================
 
     @Test
-    @DisplayName("alterarTarefa - deve atualizar e retornar tarefa")
+    @DisplayName("alterarTarefa - deve atualizar e retornar resposta")
     void alterarTarefa_sucesso() {
         TarefaUpdateRequest request = new TarefaUpdateRequest("Novo Nome", null, null, null, true);
         when(tarefaRepository.findById(tarefa.getId())).thenReturn(Optional.of(tarefa));
         when(tarefaRepository.save(tarefa)).thenReturn(tarefa);
+        when(tarefaMapper.toResponse(tarefa)).thenReturn(tarefaResponse);
 
-        Tarefa resultado = tarefaService.alterarTarefa(tarefa.getId(), request);
+        TarefaResponse resultado = tarefaService.alterarTarefa(tarefa.getId(), request);
 
-        assertThat(resultado).isEqualTo(tarefa);
+        assertThat(resultado).isEqualTo(tarefaResponse);
         verify(tarefaMapper).updateFromRequest(request, tarefa);
         verify(tarefaRepository).save(tarefa);
     }

@@ -1,6 +1,8 @@
 package com.marcosdias.apitodo.business.service;
 
 import com.marcosdias.apitodo.business.mapper.TarefaMapper;
+import com.marcosdias.apitodo.controller.dto.TarefaRequest;
+import com.marcosdias.apitodo.controller.dto.TarefaResponse;
 import com.marcosdias.apitodo.controller.dto.TarefaUpdateRequest;
 import com.marcosdias.apitodo.domain.entity.Tarefa;
 import com.marcosdias.apitodo.infra.exception.NotFoundException;
@@ -20,37 +22,39 @@ public class TarefaService {
     private final TarefaRepository tarefaRepository;
     private final TarefaMapper tarefaMapper;
 
-    public Tarefa adicionarTarefa(Tarefa tarefa) {
-        log.info("Salvando tarefa: {}", tarefa.getNomeTarefa());
-        return tarefaRepository.save(tarefa);
+    public TarefaResponse adicionarTarefa(TarefaRequest request) {
+        log.info("Salvando tarefa: {}", request.nomeTarefa());
+        Tarefa tarefa = tarefaMapper.toEntity(request);
+        return tarefaMapper.toResponse(tarefaRepository.save(tarefa));
     }
 
-    public List<Tarefa> listarTarefas() {
-        List<Tarefa> tarefas = tarefaRepository.findAll();
-        if (tarefas.isEmpty()) {
-            throw new NotFoundException("Nenhuma tarefa encontrada");
-        }
-        return tarefas;
+    public List<TarefaResponse> listarTarefas() {
+        return tarefaRepository.findAll().stream()
+                .map(tarefaMapper::toResponse)
+                .toList();
     }
 
-    public Tarefa buscarTarefaId(String id) {
-        return tarefaRepository.findById(id)
+    public TarefaResponse buscarTarefaId(String id) {
+        Tarefa tarefa = tarefaRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Tarefa não encontrada com id: " + id));
+        return tarefaMapper.toResponse(tarefa);
     }
 
     public void deletarTarefa(String id) {
-        Tarefa tarefa = buscarTarefaId(id);
+        Tarefa tarefa = tarefaRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Tarefa não encontrada com id: " + id));
         tarefaRepository.delete(tarefa);
         log.info("Tarefa id {} deletada", id);
     }
 
-    public Tarefa alterarTarefa(String id, TarefaUpdateRequest request) {
+    public TarefaResponse alterarTarefa(String id, TarefaUpdateRequest request) {
         if (request.isEmpty()) {
             throw new UnprocessableEntityException("Nenhum campo fornecido para atualização");
         }
-        Tarefa tarefa = buscarTarefaId(id);
+        Tarefa tarefa = tarefaRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Tarefa não encontrada com id: " + id));
         tarefaMapper.updateFromRequest(request, tarefa);
         log.info("Atualizando tarefa id: {}", id);
-        return tarefaRepository.save(tarefa);
+        return tarefaMapper.toResponse(tarefaRepository.save(tarefa));
     }
 }
