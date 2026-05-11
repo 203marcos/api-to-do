@@ -28,24 +28,21 @@ public class TarefaController {
     @Operation(summary = "Criar uma nova tarefa", description = "Cria uma nova tarefa para o usuário")
     public ResponseEntity<TarefaResponse> criarTarefa(@RequestBody @Valid TarefaRequest request) {
         log.info("POST /api/v1/tarefas - criando tarefa: {}", request.nomeTarefa());
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(TarefaResponse.fromEntity(tarefaService.adicionarTarefa(request.toEntity())));
+        return ResponseEntity.status(HttpStatus.CREATED).body(tarefaService.adicionarTarefa(request));
     }
 
     @GetMapping
     @Operation(summary = "Listar todas as tarefas", description = "Retorna todas as tarefas cadastradas")
     public ResponseEntity<List<TarefaResponse>> listarTarefas() {
         log.info("GET /api/v1/tarefas - listando tarefas");
-        return ResponseEntity.ok(tarefaService.listarTarefas().stream()
-                .map(TarefaResponse::fromEntity)
-                .toList());
+        return ResponseEntity.ok(tarefaService.listarTarefas());
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Buscar tarefa por ID", description = "Retorna uma tarefa pelo seu ID")
     public ResponseEntity<TarefaResponse> buscarTarefaId(@PathVariable String id) {
         log.info("GET /api/v1/tarefas/{} - buscando tarefa", id);
-        return ResponseEntity.ok(TarefaResponse.fromEntity(tarefaService.buscarTarefaId(id)));
+        return ResponseEntity.ok(tarefaService.buscarTarefaId(id));
     }
 
     @PatchMapping("/{id}")
@@ -53,7 +50,7 @@ public class TarefaController {
     public ResponseEntity<TarefaResponse> alterarTarefaId(@PathVariable String id,
                                                            @RequestBody @Valid TarefaUpdateRequest request) {
         log.info("PATCH /api/v1/tarefas/{} - atualizando tarefa", id);
-        return ResponseEntity.ok(TarefaResponse.fromEntity(tarefaService.alterarTarefa(id, request)));
+        return ResponseEntity.ok(tarefaService.alterarTarefa(id, request));
     }
 
     @DeleteMapping("/{id}")

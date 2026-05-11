@@ -1,23 +1,12 @@
 package com.marcosdias.apitodo.controller.dto;
 
-import com.marcosdias.apitodo.domain.entity.Tarefa;
+import java.time.LocalDate;
 
 public record TarefaResponse(
         String id,
         String nomeTarefa,
         String descricaoTarefa,
-        String dataInicioTarefa,
-        String dataFimTarefa,
+        LocalDate dataInicioTarefa,
+        LocalDate dataFimTarefa,
         Boolean statusTarefa
-) {
-    public static TarefaResponse fromEntity(Tarefa tarefa) {
-        return new TarefaResponse(
-                tarefa.getId(),
-                tarefa.getNomeTarefa(),
-                tarefa.getDescricaoTarefa(),
-                tarefa.getDataInicioTarefa(),
-                tarefa.getDataFimTarefa(),
-                tarefa.getStatusTarefa()
-        );
-    }
-}
+) {}
