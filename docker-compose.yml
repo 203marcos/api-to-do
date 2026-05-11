@@ -3,9 +3,10 @@ services:
     build: ./back
     ports:
       - "8080:8080"
+    env_file:
+      - ./back/.env
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - MONGODB_URI=${MONGODB_URI}
 
   front:
     build:
