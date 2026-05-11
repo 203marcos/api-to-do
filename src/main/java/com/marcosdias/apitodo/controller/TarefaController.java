@@ -3,6 +3,7 @@ package com.marcosdias.apitodo.controller;
 import com.marcosdias.apitodo.business.service.TarefaService;
 import com.marcosdias.apitodo.controller.dto.TarefaRequest;
 import com.marcosdias.apitodo.controller.dto.TarefaResponse;
+import com.marcosdias.apitodo.controller.dto.TarefaUpdateRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -45,5 +46,13 @@ public class TarefaController {
     public ResponseEntity<TarefaResponse> buscarTarefaId(@PathVariable Long id) {
         log.info("GET /api/v1/tarefas/{} - buscando tarefa", id);
         return ResponseEntity.ok(TarefaResponse.fromEntity(tarefaService.buscarTarefaId(id)));
+    }
+
+    @PatchMapping("/{id}")
+    @Operation(summary = "Atualizar tarefa parcialmente", description = "Atualiza apenas os campos enviados")
+    public ResponseEntity<TarefaResponse> alterarTarefaId(@PathVariable Long id,
+                                                           @RequestBody @Valid TarefaUpdateRequest request) {
+        log.info("PATCH /api/v1/tarefas/{} - atualizando tarefa", id);
+        return ResponseEntity.ok(TarefaResponse.fromEntity(tarefaService.alterarTarefa(id, request)));
     }
 }
