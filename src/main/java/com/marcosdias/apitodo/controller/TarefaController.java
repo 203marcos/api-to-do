@@ -43,16 +43,24 @@ public class TarefaController {
 
     @GetMapping("/{id}")
     @Operation(summary = "Buscar tarefa por ID", description = "Retorna uma tarefa pelo seu ID")
-    public ResponseEntity<TarefaResponse> buscarTarefaId(@PathVariable Long id) {
+    public ResponseEntity<TarefaResponse> buscarTarefaId(@PathVariable String id) {
         log.info("GET /api/v1/tarefas/{} - buscando tarefa", id);
         return ResponseEntity.ok(TarefaResponse.fromEntity(tarefaService.buscarTarefaId(id)));
     }
 
     @PatchMapping("/{id}")
     @Operation(summary = "Atualizar tarefa parcialmente", description = "Atualiza apenas os campos enviados")
-    public ResponseEntity<TarefaResponse> alterarTarefaId(@PathVariable Long id,
+    public ResponseEntity<TarefaResponse> alterarTarefaId(@PathVariable String id,
                                                            @RequestBody @Valid TarefaUpdateRequest request) {
         log.info("PATCH /api/v1/tarefas/{} - atualizando tarefa", id);
         return ResponseEntity.ok(TarefaResponse.fromEntity(tarefaService.alterarTarefa(id, request)));
+    }
+
+    @DeleteMapping("/{id}")
+    @Operation(summary = "Deletar tarefa", description = "Remove uma tarefa pelo seu ID")
+    public ResponseEntity<Void> deletarTarefaId(@PathVariable String id) {
+        log.info("DELETE /api/v1/tarefas/{} - deletando tarefa", id);
+        tarefaService.deletarTarefa(id);
+        return ResponseEntity.noContent().build();
     }
 }

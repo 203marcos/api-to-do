@@ -1,16 +1,15 @@
 package com.marcosdias.apitodo.domain.entity;
 
-import jakarta.persistence.*;
 import lombok.Data;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
 @Data
-@Entity
-@Table(name = "tarefas")
+@Document(collection = "tarefas")
 public class Tarefa {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private String id;
     private String nomeTarefa;
     private String descricaoTarefa;
     private String dataInicioTarefa;

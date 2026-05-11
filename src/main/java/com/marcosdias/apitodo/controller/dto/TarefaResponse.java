@@ -3,7 +3,7 @@ package com.marcosdias.apitodo.controller.dto;
 import com.marcosdias.apitodo.domain.entity.Tarefa;
 
 public record TarefaResponse(
-        Long id,
+        String id,
         String nomeTarefa,
         String descricaoTarefa,
         String dataInicioTarefa,

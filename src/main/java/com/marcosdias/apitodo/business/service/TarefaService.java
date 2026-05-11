@@ -33,12 +33,18 @@ public class TarefaService {
         return tarefas;
     }
 
-    public Tarefa buscarTarefaId(Long id) {
+    public Tarefa buscarTarefaId(String id) {
         return tarefaRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Tarefa não encontrada com id: " + id));
     }
 
-    public Tarefa alterarTarefa(Long id, TarefaUpdateRequest request) {
+    public void deletarTarefa(String id) {
+        Tarefa tarefa = buscarTarefaId(id);
+        tarefaRepository.delete(tarefa);
+        log.info("Tarefa id {} deletada", id);
+    }
+
+    public Tarefa alterarTarefa(String id, TarefaUpdateRequest request) {
         if (request.isEmpty()) {
             throw new UnprocessableEntityException("Nenhum campo fornecido para atualização");
         }
