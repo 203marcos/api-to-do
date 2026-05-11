@@ -1,12 +1,21 @@
 services:
+  mongo:
+    image: mongo:7
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
   back:
     build: ./back
     ports:
       - "8080:8080"
-    env_file:
-      - ./back/.env
     environment:
       - SPRING_PROFILES_ACTIVE=prod
+      - MONGODB_URI=mongodb://mongo:27017/apitodo
+      - JWT_SECRET=dGhpcy1pcy1hLWRldi1zZWNyZXQta2V5LWZvci1qd3QtYXBpLXRvZG8tMjAyNi1tYXJjb3MtdmVyeS1zZWN1cmU=
+    depends_on:
+      - mongo
 
   front:
     build:
@@ -17,3 +26,6 @@ services:
       - "3000:3000"
     depends_on:
       - back
+
+volumes:
+  mongo_data:
