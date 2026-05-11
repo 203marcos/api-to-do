@@ -3,7 +3,6 @@ package com.marcosdias.apitodo.controller;
 import com.marcosdias.apitodo.business.service.TarefaService;
 import com.marcosdias.apitodo.controller.dto.TarefaRequest;
 import com.marcosdias.apitodo.controller.dto.TarefaResponse;
-import com.marcosdias.apitodo.domain.entity.Tarefa;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -26,9 +25,10 @@ public class TarefaController {
 
     @PostMapping
     @Operation(summary = "Criar uma nova tarefa", description = "Cria uma nova tarefa para o usuário")
-    public ResponseEntity<Tarefa> criarTarefa(@RequestBody @Valid TarefaRequest request) {
+    public ResponseEntity<TarefaResponse> criarTarefa(@RequestBody @Valid TarefaRequest request) {
         log.info("POST /api/v1/tarefas - criando tarefa: {}", request.nomeTarefa());
-        return ResponseEntity.status(HttpStatus.CREATED).body(tarefaService.adicionarTarefa(request.toEntity()));
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(TarefaResponse.fromEntity(tarefaService.adicionarTarefa(request.toEntity())));
     }
 
     @GetMapping
@@ -38,5 +38,12 @@ public class TarefaController {
         return ResponseEntity.ok(tarefaService.listarTarefas().stream()
                 .map(TarefaResponse::fromEntity)
                 .toList());
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Buscar tarefa por ID", description = "Retorna uma tarefa pelo seu ID")
+    public ResponseEntity<TarefaResponse> buscarTarefaId(@PathVariable Long id) {
+        log.info("GET /api/v1/tarefas/{} - buscando tarefa", id);
+        return ResponseEntity.ok(TarefaResponse.fromEntity(tarefaService.buscarTarefaId(id)));
     }
 }
