@@ -1,12 +1,15 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { Tarefa, TarefaRequest } from '@/types';
 import { listarTarefas, criarTarefa, alterarTarefa, deletarTarefa } from '@/services/api';
+import { isAuthenticated, getEmail, clearSession } from '@/services/auth';
 
 const emptyForm: TarefaRequest = { nomeTarefa: '', descricaoTarefa: '', statusTarefa: false };
 
 export default function Home() {
+  const router = useRouter();
   const [tarefas, setTarefas] = useState<Tarefa[]>([]);
   const [form, setForm] = useState<TarefaRequest>(emptyForm);
   const [editando, setEditando] = useState<Tarefa | null>(null);
@@ -16,6 +19,12 @@ export default function Home() {
   const [erro, setErro] = useState('');
   const [erroEdicao, setErroEdicao] = useState('');
 
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      router.push('/login');
+    }
+  }, [router]);
+
   const carregar = useCallback(async () => {
     setLoading(true);
     const data = await listarTarefas(filtro);
@@ -24,6 +33,11 @@ export default function Home() {
   }, [filtro]);
 
   useEffect(() => { carregar(); }, [carregar]);
+
+  function handleLogout() {
+    clearSession();
+    router.push('/login');
+  }
 
   async function handleCriar(e: React.FormEvent) {
     e.preventDefault();
@@ -91,7 +105,18 @@ export default function Home() {
 
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-blue-500">To-Do List</h1>
+          <div className="flex items-center justify-between">
+            <h1 className="text-3xl font-bold text-blue-500">To-Do List</h1>
+            <div className="flex items-center gap-3">
+              <span className="text-gray-600 text-xs hidden sm:block">{getEmail()}</span>
+              <button
+                onClick={handleLogout}
+                className="text-gray-500 hover:text-red-500 text-sm transition"
+              >
+                Sair
+              </button>
+            </div>
+          </div>
           <p className="text-gray-500 text-sm mt-1">
             {pendentes.length} pendente{pendentes.length !== 1 ? 's' : ''} · {concluidas.length} concluída{concluidas.length !== 1 ? 's' : ''}
           </p>
