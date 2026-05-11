@@ -2,6 +2,7 @@ package com.marcosdias.apitodo.controller;
 
 import com.marcosdias.apitodo.business.service.TarefaService;
 import com.marcosdias.apitodo.controller.dto.TarefaRequest;
+import com.marcosdias.apitodo.controller.dto.TarefaResponse;
 import com.marcosdias.apitodo.domain.entity.Tarefa;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -11,6 +12,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/tarefas")
@@ -26,5 +29,14 @@ public class TarefaController {
     public ResponseEntity<Tarefa> criarTarefa(@RequestBody @Valid TarefaRequest request) {
         log.info("POST /api/v1/tarefas - criando tarefa: {}", request.nomeTarefa());
         return ResponseEntity.status(HttpStatus.CREATED).body(tarefaService.adicionarTarefa(request.toEntity()));
+    }
+
+    @GetMapping
+    @Operation(summary = "Listar todas as tarefas", description = "Retorna todas as tarefas cadastradas")
+    public ResponseEntity<List<TarefaResponse>> listarTarefas() {
+        log.info("GET /api/v1/tarefas - listando tarefas");
+        return ResponseEntity.ok(tarefaService.listarTarefas().stream()
+                .map(TarefaResponse::fromEntity)
+                .toList());
     }
 }
