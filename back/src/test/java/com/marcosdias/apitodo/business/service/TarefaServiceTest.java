@@ -16,7 +16,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -28,6 +31,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 class TarefaServiceTest {
@@ -50,9 +54,9 @@ class TarefaServiceTest {
     @BeforeEach
     void setUp() {
         Authentication authentication = mock(Authentication.class);
-        when(authentication.getName()).thenReturn(USER_EMAIL);
+        lenient().when(authentication.getName()).thenReturn(USER_EMAIL);
         SecurityContext securityContext = mock(SecurityContext.class);
-        when(securityContext.getAuthentication()).thenReturn(authentication);
+        lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
         SecurityContextHolder.setContext(securityContext);
 
         tarefa = new Tarefa();
@@ -109,37 +113,43 @@ class TarefaServiceTest {
     @Test
     @DisplayName("listarTarefas - deve retornar tarefas do usuário quando status for null")
     void listarTarefas_semFiltro_retornaTodasTarefas() {
-        when(tarefaRepository.findByUsuarioEmail(USER_EMAIL)).thenReturn(List.of(tarefa));
+        Pageable pageable = PageRequest.of(0, 10);
+        when(tarefaRepository.findByUsuarioEmail(eq(USER_EMAIL), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(tarefa)));
         when(tarefaMapper.toResponse(tarefa)).thenReturn(tarefaResponse);
 
-        List<TarefaResponse> resultado = tarefaService.listarTarefas(null);
+        Page<TarefaResponse> resultado = tarefaService.listarTarefas(null, pageable);
 
-        assertThat(resultado).hasSize(1).contains(tarefaResponse);
-        verify(tarefaRepository).findByUsuarioEmail(USER_EMAIL);
-        verify(tarefaRepository, never()).findByStatusTarefaAndUsuarioEmail(any(), any());
+        assertThat(resultado.getContent()).hasSize(1).contains(tarefaResponse);
+        verify(tarefaRepository).findByUsuarioEmail(USER_EMAIL, pageable);
+        verify(tarefaRepository, never()).findByStatusTarefaAndUsuarioEmail(any(), any(), any(Pageable.class));
     }
 
     @Test
     @DisplayName("listarTarefas - deve filtrar por status do usuário quando informado")
     void listarTarefas_comFiltroStatus_retornaFiltradas() {
-        when(tarefaRepository.findByStatusTarefaAndUsuarioEmail(false, USER_EMAIL)).thenReturn(List.of(tarefa));
+        Pageable pageable = PageRequest.of(0, 10);
+        when(tarefaRepository.findByStatusTarefaAndUsuarioEmail(eq(false), eq(USER_EMAIL), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(tarefa)));
         when(tarefaMapper.toResponse(tarefa)).thenReturn(tarefaResponse);
 
-        List<TarefaResponse> resultado = tarefaService.listarTarefas(false);
+        Page<TarefaResponse> resultado = tarefaService.listarTarefas(false, pageable);
 
-        assertThat(resultado).hasSize(1).contains(tarefaResponse);
-        verify(tarefaRepository).findByStatusTarefaAndUsuarioEmail(false, USER_EMAIL);
-        verify(tarefaRepository, never()).findByUsuarioEmail(any());
+        assertThat(resultado.getContent()).hasSize(1).contains(tarefaResponse);
+        verify(tarefaRepository).findByStatusTarefaAndUsuarioEmail(false, USER_EMAIL, pageable);
+        verify(tarefaRepository, never()).findByUsuarioEmail(any(), any(Pageable.class));
     }
 
     @Test
     @DisplayName("listarTarefas - deve retornar lista vazia quando não houver tarefas")
     void listarTarefas_listaVazia_retornaListaVazia() {
-        when(tarefaRepository.findByUsuarioEmail(USER_EMAIL)).thenReturn(List.of());
+        Pageable pageable = PageRequest.of(0, 10);
+        when(tarefaRepository.findByUsuarioEmail(eq(USER_EMAIL), eq(pageable)))
+                .thenReturn(Page.empty());
 
-        List<TarefaResponse> resultado = tarefaService.listarTarefas(null);
+        Page<TarefaResponse> resultado = tarefaService.listarTarefas(null, pageable);
 
-        assertThat(resultado).isEmpty();
+        assertThat(resultado.getContent()).isEmpty();
     }
 
     // ==================== buscarTarefaId ====================

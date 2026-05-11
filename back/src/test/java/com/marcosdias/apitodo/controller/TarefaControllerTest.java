@@ -14,9 +14,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
@@ -30,8 +34,8 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@WebMvcTest(TarefaController.class)
-@Import(GlobalExceptionHandler.class)
+@WebMvcTest(value = TarefaController.class, excludeAutoConfiguration = UserDetailsServiceAutoConfiguration.class)
+@Import({com.marcosdias.apitodo.infra.security.SecurityConfig.class, GlobalExceptionHandler.class})
 @WithMockUser
 class TarefaControllerTest {
 
@@ -135,36 +139,40 @@ class TarefaControllerTest {
     // ==================== GET all ====================
 
     @Test
-    @DisplayName("GET /tarefas - deve retornar 200 e lista de tarefas sem filtro")
+    @DisplayName("GET /tarefas - deve retornar 200 e lista paginada sem filtro")
     void listarTarefas_sucesso() throws Exception {
-        when(tarefaService.listarTarefas(null)).thenReturn(List.of(tarefaResponse));
+        Page<TarefaResponse> page = new PageImpl<>(List.of(tarefaResponse));
+        when(tarefaService.listarTarefas(eq(null), any(Pageable.class))).thenReturn(page);
 
         mockMvc.perform(get(BASE_URL))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$[0].id").value(ID))
-                .andExpect(jsonPath("$[0].nomeTarefa").value("Estudar Spring Boot"));
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[0].id").value(ID))
+                .andExpect(jsonPath("$.content[0].nomeTarefa").value("Estudar Spring Boot"))
+                .andExpect(jsonPath("$.totalElements").value(1));
     }
 
     @Test
     @DisplayName("GET /tarefas?status=false - deve retornar apenas tarefas pendentes")
     void listarTarefas_filtroStatusFalse_retornaPendentes() throws Exception {
-        when(tarefaService.listarTarefas(false)).thenReturn(List.of(tarefaResponse));
+        Page<TarefaResponse> page = new PageImpl<>(List.of(tarefaResponse));
+        when(tarefaService.listarTarefas(eq(false), any(Pageable.class))).thenReturn(page);
 
         mockMvc.perform(get(BASE_URL).param("status", "false"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].statusTarefa").value(false));
+                .andExpect(jsonPath("$.content[0].statusTarefa").value(false));
     }
 
     @Test
-    @DisplayName("GET /tarefas - deve retornar 200 e lista vazia quando não houver tarefas")
+    @DisplayName("GET /tarefas - deve retornar 200 e página vazia quando não houver tarefas")
     void listarTarefas_vazio_retorna200ComListaVazia() throws Exception {
-        when(tarefaService.listarTarefas(null)).thenReturn(List.of());
+        when(tarefaService.listarTarefas(eq(null), any(Pageable.class))).thenReturn(Page.empty());
 
         mockMvc.perform(get(BASE_URL))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$").isArray())
-                .andExpect(jsonPath("$").isEmpty());
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content").isEmpty())
+                .andExpect(jsonPath("$.totalElements").value(0));
     }
 
     // ==================== GET by ID ====================

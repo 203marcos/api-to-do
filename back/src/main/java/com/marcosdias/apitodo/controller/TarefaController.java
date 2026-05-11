@@ -12,11 +12,13 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/tarefas")
@@ -41,15 +43,16 @@ public class TarefaController {
     }
 
     @GetMapping
-    @Operation(summary = "Listar tarefas", description = "Retorna tarefas do usuário. Use ?status=true para concluídas ou ?status=false para pendentes")
+    @Operation(summary = "Listar tarefas", description = "Retorna tarefas paginadas do usuário. Filtro: ?status=true/false. Paginação: ?page=0&size=10")
     @ApiResponses({
         @ApiResponse(responseCode = "200", description = "Lista retornada com sucesso"),
         @ApiResponse(responseCode = "401", description = "Não autenticado")
     })
-    public ResponseEntity<List<TarefaResponse>> listarTarefas(
-            @RequestParam(required = false) Boolean status) {
-        log.info("GET /api/v1/tarefas - listando tarefas (status={})", status);
-        return ResponseEntity.ok(tarefaService.listarTarefas(status));
+    public ResponseEntity<Page<TarefaResponse>> listarTarefas(
+            @RequestParam(required = false) Boolean status,
+            @ParameterObject @PageableDefault(size = 10) Pageable pageable) {
+        log.info("GET /api/v1/tarefas - listando tarefas (status={}, page={})", status, pageable.getPageNumber());
+        return ResponseEntity.ok(tarefaService.listarTarefas(status, pageable));
     }
 
     @GetMapping("/{id}")

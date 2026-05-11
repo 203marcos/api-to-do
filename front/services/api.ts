@@ -23,7 +23,8 @@ export async function listarTarefas(status?: boolean): Promise<Tarefa[]> {
     });
     if (res.status === 401) { handle401(); return []; }
     if (!res.ok) return [];
-    return res.json();
+    const data = await res.json();
+    return data.content ?? data;
   } catch {
     return [];
   }

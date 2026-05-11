@@ -10,10 +10,10 @@ import com.marcosdias.apitodo.infra.exception.UnprocessableEntityException;
 import com.marcosdias.apitodo.repository.TarefaRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -31,12 +31,12 @@ public class TarefaService {
         return tarefaMapper.toResponse(tarefaRepository.save(tarefa));
     }
 
-    public List<TarefaResponse> listarTarefas(Boolean status) {
+    public Page<TarefaResponse> listarTarefas(Boolean status, Pageable pageable) {
         String email = getCurrentUserEmail();
-        List<Tarefa> tarefas = status != null
-                ? tarefaRepository.findByStatusTarefaAndUsuarioEmail(status, email)
-                : tarefaRepository.findByUsuarioEmail(email);
-        return tarefas.stream().map(tarefaMapper::toResponse).toList();
+        Page<Tarefa> page = status != null
+                ? tarefaRepository.findByStatusTarefaAndUsuarioEmail(status, email, pageable)
+                : tarefaRepository.findByUsuarioEmail(email, pageable);
+        return page.map(tarefaMapper::toResponse);
     }
 
     public TarefaResponse buscarTarefaId(String id) {
