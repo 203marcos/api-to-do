@@ -8,12 +8,14 @@ import { TaskFilter } from '@/components/TaskFilter';
 import { TaskForm } from '@/components/TaskForm';
 import { TaskCard } from '@/components/TaskCard';
 import { TaskModal } from '@/components/TaskModal';
+import { ConfirmModal } from '@/components/ConfirmModal';
 import { isAuthenticated, getEmail, clearSession } from '@/lib/session';
 
 export default function Home() {
   const router = useRouter();
   const [filtro, setFiltro] = useState<FiltroStatus>(undefined);
   const [editando, setEditando] = useState<Tarefa | null>(null);
+  const [confirmandoId, setConfirmandoId] = useState<string | null>(null);
 
   const { tarefas, loading, erro, criar, alterar, deletar, toggleStatus } =
     useTarefas(filtro);
@@ -22,8 +24,14 @@ export default function Home() {
     if (!isAuthenticated()) router.push('/login');
   }, [router]);
 
-  async function handleDeletar(id: string) {
-    if (!window.confirm('Tem certeza que deseja excluir esta tarefa?')) return;
+  function handleDeletar(id: string) {
+    setConfirmandoId(id);
+  }
+
+  async function handleConfirmar() {
+    if (!confirmandoId) return;
+    const id = confirmandoId;
+    setConfirmandoId(null);
     await deletar(id);
   }
 
@@ -86,6 +94,14 @@ export default function Home() {
           tarefa={editando}
           onSalvar={alterar}
           onFechar={() => setEditando(null)}
+        />
+      )}
+
+      {confirmandoId && (
+        <ConfirmModal
+          mensagem="Tem certeza que deseja excluir esta tarefa?"
+          onConfirmar={handleConfirmar}
+          onCancelar={() => setConfirmandoId(null)}
         />
       )}
     </main>

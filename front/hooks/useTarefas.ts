@@ -58,8 +58,12 @@ export function useTarefas(filtro: FiltroStatus): UseTarefasReturn {
 
   const deletar = useCallback(
     async (id: string) => {
-      await deletarTarefa(id);
-      await carregar();
+      try {
+        await deletarTarefa(id);
+        await carregar();
+      } catch (e) {
+        setErro(extractErrorMessage(e, 'Erro ao excluir tarefa'));
+      }
     },
     [carregar]
   );
