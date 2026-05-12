@@ -14,3 +14,15 @@ export interface TarefaRequest {
   dataFimTarefa?: string;
   statusTarefa: boolean;
 }
+
+export interface LoginRequest {
+  email: string;
+  senha: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  email: string;
+}
+
+export type FiltroStatus = boolean | undefined;

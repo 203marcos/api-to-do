@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { login, registro } from '@/services/api';
-import { saveSession } from '@/services/auth';
+import { login, registro } from '@/services/auth.service';
+import { saveSession } from '@/lib/session';
+import { extractErrorMessage } from '@/utils/error';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,7 +16,10 @@ export default function LoginPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!email.trim() || !senha.trim()) { setErro('Preencha todos os campos'); return; }
+    if (!email.trim() || !senha.trim()) {
+      setErro('Preencha todos os campos');
+      return;
+    }
     setErro('');
     setLoading(true);
     try {
@@ -24,7 +28,7 @@ export default function LoginPage() {
       saveSession(data.token, data.email);
       router.push('/');
     } catch (e) {
-      setErro(e instanceof Error ? e.message : 'Erro ao autenticar');
+      setErro(extractErrorMessage(e, 'Erro ao autenticar'));
     } finally {
       setLoading(false);
     }
@@ -44,14 +48,14 @@ export default function LoginPage() {
             placeholder="Email"
             className="w-full bg-gray-900 border border-gray-800 focus:border-blue-600 rounded-lg px-4 py-3 outline-none transition placeholder-gray-600"
             value={email}
-            onChange={e => setEmail(e.target.value)}
+            onChange={(e) => setEmail(e.target.value)}
           />
           <input
             type="password"
             placeholder={modo === 'registro' ? 'Senha (mínimo 6 caracteres)' : 'Senha'}
             className="w-full bg-gray-900 border border-gray-800 focus:border-blue-600 rounded-lg px-4 py-3 outline-none transition placeholder-gray-600"
             value={senha}
-            onChange={e => setSenha(e.target.value)}
+            onChange={(e) => setSenha(e.target.value)}
           />
           {erro && <p className="text-red-500 text-sm">{erro}</p>}
           <button
@@ -66,7 +70,10 @@ export default function LoginPage() {
         <p className="text-gray-500 text-sm text-center mt-6">
           {modo === 'login' ? 'Não tem conta?' : 'Já tem conta?'}{' '}
           <button
-            onClick={() => { setModo(modo === 'login' ? 'registro' : 'login'); setErro(''); }}
+            onClick={() => {
+              setModo(modo === 'login' ? 'registro' : 'login');
+              setErro('');
+            }}
             className="text-blue-500 hover:text-blue-400 transition"
           >
             {modo === 'login' ? 'Criar conta' : 'Entrar'}
