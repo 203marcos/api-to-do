@@ -19,7 +19,7 @@ export function TaskForm({ onSubmit }: Props) {
   const [erro, setErro] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!values.nomeTarefa.trim()) {
       setErro('Nome é obrigatório');

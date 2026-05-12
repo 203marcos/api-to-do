@@ -16,7 +16,7 @@ export function AuthForm({ modo, onChangeModo, onSubmit }: Props) {
   const [erro, setErro] = useState('');
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.SyntheticEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!email.trim() || !senha.trim()) {
       setErro('Preencha todos os campos');
